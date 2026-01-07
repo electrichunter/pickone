@@ -19,6 +19,16 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'square.and.arrow.up': 'share',
+  'restaurant': 'restaurant',
+  'movie': 'movie',
+  'help': 'help',
+  'weekend': 'weekend',
+  'favorite': 'favorite',
+  'payment': 'payment',
+  'music_note': 'music-note',
+  'tv': 'tv',
+  'checkroom': 'checkroom',
+  'casino': 'casino',
 } as IconMapping;
 
 /**

@@ -1,10 +1,12 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av'; // expo-av kütüphanesini kullanarak ses çalma işlemi için import edildi (deprecated olsa da çalışıyor)
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Dimensions, Share, StyleSheet, TouchableOpacity } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, G, Path, Text as SvgText } from 'react-native-svg';
+import ViewShot from 'react-native-view-shot';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -21,6 +23,7 @@ export default function SpinScreen() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [winner, setWinner] = useState<string | null>(null);
   const rotation = useSharedValue(0); // Çark başlangıç rotasyonu
+  const viewShotRef = useRef<ViewShot>(null);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rotation.value}deg` }],
@@ -69,6 +72,18 @@ export default function SpinScreen() {
         setWinner(options[randomIndex]);
         setIsSpinning(false);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); // Durma hissi
+
+        // Save to history
+        const historyItem = {
+          title: title as string,
+          winner: options[randomIndex],
+          date: new Date().toLocaleString(),
+        };
+        AsyncStorage.getItem('spinHistory').then((stored) => {
+          const history = stored ? JSON.parse(stored) : [];
+          history.unshift(historyItem); // Add to beginning
+          AsyncStorage.setItem('spinHistory', JSON.stringify(history.slice(0, 50))); // Keep last 50
+        }).catch((error) => console.error('Error saving history:', error));
       }, 3100);
     } catch (error) {
       console.error('Error in spinWheel:', error);
@@ -125,37 +140,41 @@ export default function SpinScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { padding: 10 }]}>
-      <ThemedText type="title" style={styles.title}>{title}</ThemedText>
-      <Animated.View style={[styles.wheelContainer, animatedStyle]}>
-        {renderWheel()}
-      </Animated.View>
-      {/* <Svg width={wheelSize} height={wheelSize} style={styles.arrowContainer}>
-        <Path d={`M ${wheelSize / 2} 40 L ${wheelSize / 2 - 20} 0 L ${wheelSize / 2 + 20} 0 Z`} fill="red" stroke="yellow" strokeWidth="4" />
-      </Svg> */}
-      <TouchableOpacity style={styles.spinButton} onPress={spinWheel} disabled={isSpinning}>
-        <ThemedText style={styles.spinText}>{isSpinning ? 'Çeviriliyor...' : 'Çevir'}</ThemedText>
-      </TouchableOpacity>
-      {winner && (
-        <ThemedView style={styles.result}>
-          <ThemedText type="title" style={styles.winnerText}>Kazanan: {winner}</ThemedText>
-          <TouchableOpacity style={styles.shareButton} onPress={async () => {
-            console.log('Share button pressed');
-            try {
-              await Share.share({
-                message: `${title} için kazanan: ${winner}! Pick One uygulaması ile karar verdik.`,
-              });
-              console.log('Share successful');
-            } catch (error) {
-              console.error('Share error:', error);
-              alert(`${title} için kazanan: ${winner}! Pick One uygulaması ile karar verdik.`);
-            }
-          }}>
-            <IconSymbol name="square.and.arrow.up" color="white" size={24} />
-          </TouchableOpacity>
-        </ThemedView>
-      )}
-    </ThemedView>
+    <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 0.9 }}>
+      <ThemedView style={[styles.container, { padding: 10 }]}>
+        <ThemedText type="title" style={styles.title}>{title}</ThemedText>
+        <Animated.View style={[styles.wheelContainer, animatedStyle]}>
+          {renderWheel()}
+        </Animated.View>
+        {/* <Svg width={wheelSize} height={wheelSize} style={styles.arrowContainer}>
+          <Path d={`M ${wheelSize / 2} 40 L ${wheelSize / 2 - 20} 0 L ${wheelSize / 2 + 20} 0 Z`} fill="red" stroke="yellow" strokeWidth="4" />
+        </Svg> */}
+        <TouchableOpacity style={styles.spinButton} onPress={spinWheel} disabled={isSpinning}>
+          <ThemedText style={styles.spinText}>{isSpinning ? 'Çeviriliyor...' : 'Çevir'}</ThemedText>
+        </TouchableOpacity>
+        {winner && (
+          <ThemedView style={styles.result}>
+            <ThemedText type="title" style={styles.winnerText}>Kazanan: {winner}</ThemedText>
+            <TouchableOpacity style={styles.shareButton} onPress={async () => {
+              console.log('Share button pressed');
+              try {
+                const uri = await viewShotRef.current?.capture?.();
+                await Share.share({
+                  message: `${title} için kazanan: ${winner}! Pick One uygulaması ile karar verdik. İndir: https://play.google.com/store/apps/details?id=com.pickone.app`,
+                  url: uri,
+                });
+                console.log('Share successful');
+              } catch (error) {
+                console.error('Share error:', error);
+                alert(`${title} için kazanan: ${winner}! Pick One uygulaması ile karar verdik. İndir: https://play.google.com/store/apps/details?id=com.pickone.app`);
+              }
+            }}>
+              <IconSymbol name="square.and.arrow.up" color="white" size={24} />
+            </TouchableOpacity>
+          </ThemedView>
+        )}
+      </ThemedView>
+    </ViewShot>
   );
 }
 
@@ -203,6 +222,7 @@ const styles = StyleSheet.create({
   result: {
     alignItems: 'center',
     marginTop: 20,
+    backgroundColor: 'transparent', // Arka plan ile aynı olması için saydam yap
   },
   winnerText: {
     fontSize: 24,
@@ -214,6 +234,6 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     alignItems: 'center',
     width: 150,
-    height: 50,
+    height: 60,
   },
 });

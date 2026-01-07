@@ -3,11 +3,19 @@ import { FlatList, StyleSheet, TouchableOpacity } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 
 const templates = [
-  { id: '1', title: 'Akşam Yemeği', options: ['Pizza', 'Burger', 'Kebap', 'Salata', 'Çorba'] },
-  { id: '2', title: 'Film Türleri', options: ['Aksiyon', 'Komedi', 'Dram', 'Korku', 'Romantik'] },
-  { id: '3', title: 'Doğruluk mu Cesaret mi?', options: ['Doğruluk', 'Cesaret'] },
+  { id: '1', title: 'Akşam Yemeği', options: ['Pizza', 'Burger', 'Kebap', 'Salata', 'Çorba'], icon: 'restaurant' },
+  { id: '2', title: 'Film Türleri', options: ['Aksiyon', 'Komedi', 'Dram', 'Korku', 'Romantik'], icon: 'movie' },
+  { id: '3', title: 'Doğruluk mu Cesaret mi?', options: ['Doğruluk', 'Cesaret'], icon: 'help' },
+  { id: '4', title: 'Bu Hafta Sonu Ne Yapalım?', options: ['Sinema', 'Piknik', 'Evde Film', 'Spor', 'Alışveriş'], icon: 'weekend' },
+  { id: '5', title: 'İlk Buluşma Soruları', options: ['Nerede Tanıştık?', 'En Sevdiğin Yemek?', 'Hayalindeki Tatil?', 'En Büyük Korkun?', 'Gelecek Planların?'], icon: 'favorite' },
+  { id: '6', title: 'Hesabı Kim Ödeyecek?', options: ['Ben Öderim', 'Paylaşalım', 'Sen Öde', 'Kuraya Bırak'], icon: 'payment' },
+  { id: '7', title: 'Şarkı Söyleme Cezası', options: ['Pop Şarkısı', 'Rock Şarkısı', 'Türkü', 'Rap', 'Klasik Müzik'], icon: 'music_note' },
+  { id: '8', title: 'Hangi Diziyi İzleyelim?', options: ['Aksiyon Dizisi', 'Komedi Dizisi', 'Belgesel', 'Gerilim', 'Romantik Dizi'], icon: 'tv' },
+  { id: '9', title: 'Bugün Ne Giysem?', options: ['Kot Pantolon', 'Elbise', 'Şort', 'Etek', 'Tayt'], icon: 'checkroom' },
+  { id: '10', title: 'Çekiliş Yap', options: ['1. Kişi', '2. Kişi', '3. Kişi', '4. Kişi', '5. Kişi'], icon: 'casino' },
 ];
 
 export default function HomeScreen() {
@@ -20,7 +28,10 @@ export default function HomeScreen() {
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.templateItem} onPress={() => router.push({ pathname: '/spin' as any, params: { title: item.title, options: JSON.stringify(item.options) } })}>
-            <ThemedText type="subtitle">{item.title}</ThemedText>
+            <ThemedView style={styles.templateHeader}>
+              {item.icon && <IconSymbol name={item.icon} size={24} color="#007AFF" style={styles.icon} />}
+              <ThemedText type="subtitle">{item.title}</ThemedText>
+            </ThemedView>
             <ThemedText>{item.options.join(', ')}</ThemedText>
           </TouchableOpacity>
         )}
@@ -61,5 +72,13 @@ const styles = StyleSheet.create({
   },
   createText: {
     color: 'white',
+  },
+  templateHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  icon: {
+    marginRight: 10,
   },
 });
